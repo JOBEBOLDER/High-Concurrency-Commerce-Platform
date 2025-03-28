@@ -103,6 +103,36 @@ New token interceptor: responsible for refreshing the validity time of the token
 	2.	On updates: update the database first, then delete the corresponding Redis key.
 Use @Transactional to ensure the operation is wrapped in a transaction.
 
+## 5. Cache Issues
+
+### Cache Penetration
+When client requests miss both in cache and database, it's cache penetration.
+
+**Solutions:**
+* **Cache Empty Objects**: When no data exists in both cache and database, cache a null object with TTL.
+  * Pros: Simple implementation
+  * Cons: Extra memory consumption, potential data inconsistency
+* **Bloom Filter**: A pre-filter that checks if data exists in cache. Returns immediately if not found, continues query if found
+
+### Cache Avalanche
+When a large number of cache keys expire simultaneously or Redis service crashes, causing massive requests to hit the database.
+
+**Solutions:**
+* Set different random TTL values for keys
+* Improve Redis availability (using cluster solutions with sentinel mechanism)
+* Add degradation and rate limiting strategies to cache services using sentinel
+* Set keys to never expire (no TTL)
+* Implement multi-level caching for services
+
+### Cache Breakdown
+When a hot key is accessed with high concurrency and its cache has expired, countless requests bypass the cache and directly hit the database,
+as picture shown:
+![img.png](img.png)
+
+#### Cache Breakdown solutions:1,Mutual Exclusion Lock 2,Logical Expiration:
+![img_1.png](img_1.png)
+
+
 ### 🔥 Flash Sales System
 - Redisson-based distributed lock system preventing inventory overselling
 - Redis + Lua script implementation for atomic inventory deduction
