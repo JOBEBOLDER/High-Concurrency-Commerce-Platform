@@ -132,12 +132,65 @@ as picture shown:
 #### Cache Breakdown solutions:1,Mutual Exclusion Lock 2,Logical Expiration:
 ![img_1.png](img_1.png)
 
+#### Cache Breakdown Solutions:
 
-### 🔥 Flash Sales System
-- Redisson-based distributed lock system preventing inventory overselling
-- Redis + Lua script implementation for atomic inventory deduction
-- Asynchronous order processing via message queues
-- Handling 8K TPS during peak flash sale events
+* **Mutual Exclusion Lock Approach**: When multiple threads query data, apply mutual exclusion locks to ensure only one thread can rebuild the cache by querying the database at any given time, while other threads wait:
+  * **Pros**: Ensures data consistency
+  * **Cons**: Sacrifices system availability - if reconstruction takes too long, other requests must wait. Also carries deadlock risks
+
+* **Logical Expiration Approach**: Add a new logical expiration field to cached data. When a query arrives, first check if the current time exceeds expiration. If expired, acquire a lock and start a new thread responsible for cache rebuilding while immediately returning the old data. Other threads similarly attempt to acquire the lock - if unsuccessful, they directly return the expired data:
+  * **Pros**: Better performance, greatly enhanced system availability
+  * **Cons**: Additional memory consumption, prioritizes availability over consistency (sacrificing strong consistency). More complex implementation
+
+#### 🧭 Two solutions flowchart:
+![img_2.png](img_2.png)
+![img_3.png](img_3.png)
+
+### 🔥 Flash Sales System 
+
+- ![img_4.png](img_4.png)
+#### Coupon Flash Sale Analysis
+
+#### Pessimistic Lock Approach
+Adding synchronization locks to make threads execute serially. Using synchronized or Lock.
+* **Advantages**: Simple and direct, applies locks to shared resource objects
+* **Disadvantages**: Generally lower performance
+
+#### Optimistic Lock Approach
+No locks applied, only checking whether other threads have modified the data during updates. Using CAS version number method or leveraging database row locks with UPDATE statements.
+* **Advantages**: Better performance
+* **Disadvantages**: Can have low success rates in high-contention scenarios
+
+#### Coupon Flash flowchart:
+![img_5.png](img_5.png)
+![img_6.png](img_6.png)
+![img_7.png](img_7.png)
+
+# Using command to add Redis lock with expiration time
+
+```bash
+# Add lock with value, only if key doesn't exist (NX), and set expiration to 10 seconds (EX 10)
+set lock value NX EX 10
+
+# Unlock by deleting the key
+del lock
+```
+#### Lua script manipulation of redis to achieve atomic unlock operations
+```bash
+unlock.lua
+-- key
+if (ARGV[1] == redis.call('get', KEYS[1])) then
+    -- 释放锁
+    return redis.call('del', KEYS[1])
+end
+return 0
+
+
+```
+#### Solving Flash Sale (Seckill) Problems Using Redisson Distributed Locks
+![img_8.png](img_8.png)
+
+![img_9.png](img_9.png)
 
 ### 👥 Social Features
 - ZSET-based ranking system for popularity metrics
