@@ -166,7 +166,7 @@ No locks applied, only checking whether other threads have modified the data dur
 ![img_6.png](img_6.png)
 ![img_7.png](img_7.png)
 
-# Using command to add Redis lock with expiration time
+### Using command to add Redis lock with expiration time
 
 ```bash
 # Add lock with value, only if key doesn't exist (NX), and set expiration to 10 seconds (EX 10)
