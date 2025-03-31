@@ -192,12 +192,109 @@ return 0
 
 ![img_9.png](img_9.png)
 
-### 👥 Social Features
-- ZSET-based ranking system for popularity metrics
-- Friend relationship management with mutual following detection
-- Hybrid push-pull feed stream model reducing content delivery latency by 40%
-- Efficient pagination with Redis sorted sets
+#### Summary of Redisson distubuted lock :
+![img_10.png](img_10.png)
 
+### Coupon Flash Sale Optimization Plan:
+Optimized process for coupon flash sales: Redis + Lua + BlockingQueue
+
+Overall steps:
+1.	Use Lua script + Redis to handle the flash sale logic and make sure everything is done atomically (all at once, safely).
+2.	For creating orders, use a separate thread to handle the task asynchronously. It takes data from a blocking queue and saves it to the database.
+![img_11.png](img_11.png)
+      ❗ Problems with the original solution (BlockingQueue in JVM):
+      1.	Memory Issue:
+      BlockingQueue uses Java memory (JVM). If there are too many orders, it may run out of memory and crash, or some orders might not be created.
+      2.	Data Safety Issue:
+      If the JVM crashes, all order data in the BlockingQueue will be lost.
+
+⸻
+
+✅ Improved Solution: Use Redis as a Message Queue
+
+1. Using Redis List as a Queue
+
+Use Redis List with BLPUSH + BRPOP or BRPUSH + BLPOP to create a blocking queue.
+
+Pros:
+•	Uses Redis memory → no memory limit
+•	Redis has persistence → data is safer
+•	Keeps message order
+
+Cons:
+•	Can’t fully prevent message loss
+•	Only supports one consumer (one worker can read the queue)
+
+2. Using Redis Pub/Sub (Publish/Subscribe model)
+
+Use PUBLISH to send messages, SUBSCRIBE or PSUBSCRIBE to receive messages.
+
+Pros:
+•	Supports multiple senders and receivers (many producers and consumers)
+
+Cons:
+•	No data persistence
+•	Messages can still be lost
+•	Limited message buffer → old messages may be lost if buffer is full
+
+3. Using Redis Stream
+
+Pros:
+•	Messages are saved (persistent)
+•	Has ACK (acknowledge) system to confirm message received
+•	Supports multiple consumers
+
+________________________________________________________________
+### 👥 Social Features:👍 Like Leaderboard
+Use Redis ZSet (sorted set) to create a leaderboard.
+Each like is stored with a timestamp, so you can sort likes based on time.
+
+#### 👥 Friend Follow System
+
+Mutual Follows:
+Use Redis ZSet to find common follows between users by doing set intersection.
+
+#### 📰 Feed System (Timeline / Content Push)
+1. Time-based Feed (Timeline)
+   •	No filtering, just show posts sorted by publish time
+   •	Often used for showing what friends post (like a WeChat Moments or Instagram feed)
+Pros:
+•	Shows all posts (nothing missed)
+•	Easy to implement
+Cons:
+•	May show too many unrelated or boring posts
+•	Not very efficient for finding interesting content
+
+2. Smart Feed (Intelligent Sorting)
+   •	Uses algorithms to hide spam or boring posts
+   •	Tries to show only what you like
+
+Pros:
+•	Shows content users are interested in
+•	Users stay longer and keep scrolling
+
+Cons:
+•	If the algorithm is bad, it might backfire
+•	May show wrong or less useful posts
+
+#### 📥 Push and Pull Models
+
+🔄 Pull Mode (Read Diffusion):
+•	When you open the app, it checks who you follow and loads their latest posts
+•	Slower, but uses less memory
+
+📤 Push Mode (Write Diffusion):
+•	When someone posts, it directly sends the post to all their followers
+•	Faster, but uses more memory
+•	Best when users don’t follow too many people
+
+
+🔁 Push + Pull Combined Mode
+•	Mix of both models
+•	Example:
+•	If a celebrity has lots of followers, push to active fans, and let normal fans pull manually
+•	If someone has few followers, push to everyone’s inbox
+![img_12.png](img_12.png)
 ## 🔧 Technical Implementation
 
 ### Redis Cache Solutions
