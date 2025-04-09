@@ -8,7 +8,8 @@ a spatial exploration designed to enhance the food experience by creating an imm
 
 
 
-A high-performance e-commerce platform built with Java, Spring Boot, and Redis, focusing on solving concurrency challenges in high-traffic scenarios. This platform features optimized solutions for user authentication, merchant management, flash sales, and social interaction components.
+A high-performance e-commerce platform built with Java, Spring Boot, and Redis, focusing on solving concurrency challenges in high-traffic scenarios. 
+This platform features optimized solutions for user authentication, merchant management, flash sales, and social interaction components.
 
 ## 🚀 Key Features Introduction:
 <img width="1339" alt="image" src="https://github.com/user-attachments/assets/10019b9e-1657-418e-a436-ee485f7c3114" />
