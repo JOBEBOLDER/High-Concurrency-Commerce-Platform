@@ -2,6 +2,7 @@
 
 This project is an extension of my undergraduate project, link:https://github.com/JOBEBOLDER/SUPERLAND,
 a spatial exploration designed to enhance the food experience by creating an immersive and interactive environment.
+
 <img width="722" alt="image" src="https://github.com/user-attachments/assets/5f89d7b2-0146-445f-a1c0-49be65084987" />
 <img width="685" alt="image" src="https://github.com/user-attachments/assets/91bfce3c-2bdd-4ad9-9569-e1e3e144b7df" />
 
