@@ -48,7 +48,8 @@ New token interceptor: responsible for refreshing the validity time of the token
 
 ### 🏪 Merchant Management
 <img width="1104" alt="image" src="https://github.com/user-attachments/assets/ffa85eba-5666-45a9-bd66-3a2c5c1570fe" />
-
+two important things to mark here: when we submit the shopID form, and check the cache from Redis,
+anther case, if we can not find the shopID in Redis, we will query the database and then update the Redis cache.
 #### Exercise: Store Type Query Business Add Cache
 - The store type is used on the home page and several other pages, as shown here:
   <img width="809" alt="image" src="https://github.com/user-attachments/assets/c089dad9-1be3-4000-a499-05b91186953b" />
@@ -58,33 +59,8 @@ New token interceptor: responsible for refreshing the validity time of the token
 
 
 ### 3. Cache Update Strategies
+![img_14.png](readmepics/img_14.png)
 
-#### Memory Eviction:
-- No need for manual maintenance. Leverage Redis's built-in memory eviction mechanism.
-- When memory is insufficient, Redis will automatically evict some data.
-- On the next query, the cache will be refreshed.
-- **Consistency**: Weak
-- **Maintenance Cost**: None
-
-#### Timeout Expiration (TTL):
-- Assign a TTL (Time-To-Live) to the cached data.
-- Once it expires, Redis will automatically remove the data.
-- The next query will refresh the cache.
-- **Consistency**: Moderate
-- **Maintenance Cost**: Low
-
-#### Active Update:
-- Implement business logic to update the cache whenever the database is updated.
-- **Consistency**: Strong
-- **Maintenance Cost**: High
-
-#### 🔧 Business Scenarios:
-- **Low Consistency Requirements**:
-  - For data that rarely changes, you can rely on Redis's built-in memory eviction policy.
-- **High Consistency Requirements**:
-  - For frequently updated data, use active cache update combined with expiration time to ensure cache consistency.
-
----
 
 #### 🧠 Read Operations:
 - If the cache is hit: return the data directly.
@@ -127,10 +103,10 @@ When a large number of cache keys expire simultaneously or Redis service crashes
 ### Cache Breakdown
 When a hot key is accessed with high concurrency and its cache has expired, countless requests bypass the cache and directly hit the database,
 as picture shown:
-![img.png](img.png)
+![img.png](readmepics/img.png)
 
 #### Cache Breakdown solutions:1,Mutual Exclusion Lock 2,Logical Expiration:
-![img_1.png](img_1.png)
+![img_1.png](readmepics/img_1.png)
 
 #### Cache Breakdown Solutions:
 
@@ -143,12 +119,12 @@ as picture shown:
   * **Cons**: Additional memory consumption, prioritizes availability over consistency (sacrificing strong consistency). More complex implementation
 
 #### 🧭 Two solutions flowchart:
-![img_2.png](img_2.png)
-![img_3.png](img_3.png)
+![img_2.png](readmepics/img_2.png)
+![img_3.png](readmepics/img_3.png)
 
 ### 🔥 Flash Sales System 
 
-- ![img_4.png](img_4.png)
+- ![img_4.png](readmepics/img_4.png)
 #### Coupon Flash Sale Analysis
 
 #### Pessimistic Lock Approach
@@ -162,9 +138,33 @@ No locks applied, only checking whether other threads have modified the data dur
 * **Disadvantages**: Can have low success rates in high-contention scenarios
 
 #### Coupon Flash flowchart:
-![img_5.png](img_5.png)
-![img_6.png](img_6.png)
-![img_7.png](img_7.png)
+![img_5.png](readmepics/img_5.png)
+
+![img_15.png](readmepics/img_15.png)
+This diagram illustrates how a distributed lock ensures data consistency and concurrency control across multiple JVM instances in a “one person, one order” scenario.
+
+⸻
+
+✅ Key Flow:
+1.	Only one thread (Thread 1 in JVM1) can acquire the distributed lock from the Lock Coordinator.
+2.	It checks if the order already exists:
+•	If yes, it throws an error (duplicate order).
+•	If no, it inserts the new order safely.
+3.	After completing, it releases the lock.
+4.	Other threads (Thread 2, 3, 4) that failed to get the lock initially:
+•	Wait in line until the lock is released.
+•	Once released, they retry:
+•	If the order now exists, they throw an error (as expected).
+•	Otherwise, they insert (if applicable, but usually it fails due to existing order).
+
+⸻
+
+🧠 Why this matters:
+
+Without a distributed lock, multiple JVMs might allow multiple threads to create duplicate orders.
+With a lock coordinator (e.g., Redis, ZooKeeper), only one thread globally can access the critical section at a time, ensuring cross-instance safety.
+![img_6.png](readmepics/img_6.png)
+![img_7.png](readmepics/img_7.png)
 
 ### Using command to add Redis lock with expiration time
 
@@ -188,12 +188,12 @@ return 0
 
 ```
 #### Solving Flash Sale (Seckill) Problems Using Redisson Distributed Locks
-![img_8.png](img_8.png)
+![img_8.png](readmepics/img_8.png)
 
-![img_9.png](img_9.png)
+![img_9.png](readmepics/img_9.png)
 
 #### Summary of Redisson distubuted lock :
-![img_10.png](img_10.png)
+![img_10.png](readmepics/img_10.png)
 
 ### Coupon Flash Sale Optimization Plan:
 Optimized process for coupon flash sales: Redis + Lua + BlockingQueue
@@ -201,7 +201,7 @@ Optimized process for coupon flash sales: Redis + Lua + BlockingQueue
 Overall steps:
 1.	Use Lua script + Redis to handle the flash sale logic and make sure everything is done atomically (all at once, safely).
 2.	For creating orders, use a separate thread to handle the task asynchronously. It takes data from a blocking queue and saves it to the database.
-![img_11.png](img_11.png)
+![img_11.png](readmepics/img_11.png)
       ❗ Problems with the original solution (BlockingQueue in JVM):
       1.	Memory Issue:
       BlockingQueue uses Java memory (JVM). If there are too many orders, it may run out of memory and crash, or some orders might not be created.
@@ -294,7 +294,7 @@ Cons:
 •	Example:
 •	If a celebrity has lots of followers, push to active fans, and let normal fans pull manually
 •	If someone has few followers, push to everyone’s inbox
-![img_12.png](img_12.png)
+![img_12.png](readmepics/img_12.png)
 ## 🔧 Technical Implementation
 
 ### Redis Cache Solutions
